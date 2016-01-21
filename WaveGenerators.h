@@ -18,18 +18,20 @@
 class BaseWave
 {
 public:
+	//each time the wave is sampled, phase is incremented by phaseIncr
 	double phaseIncr;
 	double phase;
-	float frq;
+	float frequency;
 
+	//constructor
 	BaseWave()
 	{
 		phaseIncr = 0;
 		phase = 0;
-		frq = 440;
+		frequency = 440; //HZ
 	}
 
-	/// Initialize the oscillator.
+	// Sets the frequency and calls Reset
 	virtual void Init(int n, float v)
 	{
 		if (n > 0)
@@ -37,68 +39,73 @@ public:
 		Reset(0);
 	}
 
-	/// Return the next sample. Param 'in' is the volume passed in.
+
+
+	// calculates and returns the next sample. Param 'in' is the volume passed in.
 	virtual float Sample(float in)
 	{
+		//this actually creates the sample, gen is the value from the wave function
 		return Gen() * in;
 	}
 
-	/// Set the Frequency. Frequency doesnt actually get changed unless you call reset();
+
+	// Set the Frequency. Frequency doesnt actually get changed unless you call reset();
 	inline void SetFrequency(float f)
 	{
-		frq = f;
+		frequency = f;
 	}
 
-	/// Modulate the oscillator frequency.  This forces recalculation of the
-	/// phase increment by adding the argument to the last set frequency value.
-	/// @param d delta frequency in Hz
+
+
+	// Modulate the frequency AKA pitch, d is the HZ frequency value to modulate by
 	virtual void Modulate(float d)
 	{
-		phaseIncr = (double)(frq + d) * Jeffrey.frqRad;
+		phaseIncr = (double)(frequency + d) * Jeffrey.frqRad;
+
 		if (phaseIncr > PI)
 			phaseIncr = PI;
 	}
 
-	/// Get the frequency.
+	// Getter for frequency
 	inline float GetFrequency()
 	{
-		return frq;
+		return frequency;
 	}
 
 
 
-	/// Reset the oscillator. The phase increment is calculated based on the 
-	/// last set frequency value. The phase argument indicates the next phase.
-	/// When set to 0, the oscillator is reset to the initial conditions. Values
-	/// greater than 0 cause calculation of the appropriate starting sample.
-	/// Values less than zero cause the phase to remain unchanged.
+    //Sets the phase back to zero and recalculates the phaseIncr
 	virtual void Reset(float initPhs = 0)
 	{
-		phaseIncr = (double)frq * Jeffrey.frqRad;
+		phaseIncr = (double)frequency * Jeffrey.frqRad;
+
 		if (phaseIncr > PI)
 			phaseIncr = PI;
-		if (initPhs >= 0)
-			phase = initPhs;
 	}
 
 
-
+	//phasewrap is what keeps the phase between 0 and 2pi
 	inline double PhaseWrap(double phase)
 	{
 		while (phase >= twoPI)
 			phase -= twoPI;
+
 		while (phase < 0)
 			phase += twoPI;
+
 		return phase;
 	}
 
 
-	/// Generate the next sample. The sample amplitude is normalized to [-1,+1] range. 
+	/// Generates the next sample. The sample amplitude is normalized to [-1,+1] range. 
 	//aka The caller must apply any amplitude peak level multiplier.
 	virtual float Gen()
 	{
 		phase = PhaseWrap(phase);
+
+		//actual sine function call
 		float out = sinv(phase);
+
 		phase += phaseIncr;
 		return out;
 	}
@@ -124,9 +131,11 @@ class SawWave : public BaseWave
 {
 public:
 	
+	//phase for sawWaves is in between -1 and 1, not 0 to 2pi
 	virtual void Reset(float initPhs = 0)
 	{
-		phaseIncr = (double)((2 * frq) / Jeffrey.sampleRate);
+		phaseIncr = (double)((2 * frequency) / Jeffrey.sampleRate);
+
 		if (initPhs >= 0)
 		{
 			phase = (initPhs * oneDivPI) - 1;
@@ -135,9 +144,11 @@ public:
 		}
 	}
 
+	
 	virtual float Gen()
 	{
 		float v = phase;
+		//this is the equivalent of calling PhaseWrap for the basewave
 		if ((phase += phaseIncr) >= 1)
 			phase = -1;
 		return v;
@@ -146,7 +157,7 @@ public:
 
 	virtual void Modulate(float d)
 	{
-		double f = (double)(frq + d);
+		double f = (double)(frequency + d);
 		if (f < 0)
 			f = -f;
 		phaseIncr = (2 * f) / Jeffrey.sampleRate;
@@ -163,7 +174,7 @@ public:
 //=======================================================================
 
 
-/// Triangle wave by direct calculation
+// Triangle wave by direct calculation
 class TriWave : public BaseWave
 {
 public:
@@ -171,12 +182,16 @@ public:
 	//NOTE: phase varies from [-PI, PI] not [0, 2PI]
 	virtual float Gen()
 	{
-		//float triValue = (float)(1 + (2 * fabs(phase - PI) / PI);
+		
 		float triValue = (float)(phase * twoDivPI);
+
+		//increment flips signs every pi radians
 		if (triValue < 0)
 			triValue = 1.0 + triValue;
 		else
 			triValue = 1.0 - triValue;
+
+		//this is the phase wrapper for triangle waves
 		if ((phase += phaseIncr) >= PI)
 			phase -= twoPI;
 		return triValue;
@@ -189,61 +204,55 @@ public:
 //=======================================================================
 
 
-/// Square wave by direct calculation. This is fast but not
-/// bandwidth limited and should only be used for LFO effects,
-/// not audio. This has a settable min/max so that it can toggle
-/// from 0/1 as well as -1/+1, or any other pair of values
+//square wave by direct calculation aka dont wanna use as a standalone sound
 class SqrWave : public BaseWave
 {
 private:
-	double midPoint;
-	double dutyCycle;
+	double mid;
+	double duty; //this allows for a variable duty cycle
 	float ampMax;
 	float ampMin;
 
 public:
 	SqrWave()
 	{
-		midPoint = PI;
-		dutyCycle = 50.0;
+		mid = PI;
+		duty = 50.0; //standard unless changed
 		ampMax = 1.0;
 		ampMin = -1.0;
 	}
 
-	/// Set the duty cycle. The duty cycle is specified in a percent
-	/// of the period (e.g. 50 = half of period is on).
-	/// @param d duty cycle (0-100)
-	void inline SetDutyCycle(float d)
+	// Set the duty cycle. d is a percent (0-100)
+	void inline SetDuty(float d)
 	{
-		dutyCycle = (double)d;
+		duty = (double)d;
 	}
 
 
-	/// Set the min/max amplitudes. Typically an oscillator is normalized
-	/// to the [-1,+1] range. The square wave can be set to toggle between
-	/// any two values so that it functions as a gate signal.
+	// Set the min/max amplitudes. pretty much always [-1,1]
 	void inline SetMinMax(float amin, float amax)
 	{
 		ampMin = amin;
 		ampMax = amax;
 	}
 
-	// Fo, Duty%
+
+
 	virtual void Init(int n, float v, float d)
 	{
 		if (n > 0)
 		{
 			SetFrequency(float(v));
 			if (n > 1)
-				SetDutyCycle(d);
+				SetDuty(d);
 		}
 		Reset();
 	}
 
-	/// Initialize the square wave. f is frequency in Hz, duty = duty cycle (0-100)
+	// Initialize the square wave. f is frequency in Hz, duty = duty cycle (0-100)
 	void InitSqr(float f, float duty)
 	{
-		SetDutyCycle(duty);
+		SetDuty(duty);
 		SetFrequency(f);
 		Reset();
 	}
@@ -251,14 +260,25 @@ public:
 	
 	virtual void Reset(float initPhs = 0)
 	{
-		BaseWave::Reset(initPhs);
-		midPoint = twoPI * (dutyCycle / 100.0);
+		BaseWave::Reset(initPhs); //call to parent class' reset
+
+		//the variable midpoint is calculated by multiplying the period by the duty/100
+		mid = twoPI * (duty / 100.0);
 	}
 
 	
 	virtual float Gen()
 	{
-		float v = (phase > midPoint) ? ampMin : ampMax;
+		float v;
+
+		//checking if the phase is less or greater than the midpoint
+		if  (phase > mid){
+			v = ampMin; //-1
+		} 
+		else{
+		    v = ampMax; //1
+		}
+
 		if ((phase += phaseIncr) >= twoPI)
 			phase -= twoPI;
 		return v;
