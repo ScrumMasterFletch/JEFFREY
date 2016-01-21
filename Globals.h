@@ -57,7 +57,18 @@ public:
 	double frqRad; //
 	/// table to convert pitch index into frequency
 	float tuning[128];
-	
+	/// pre-calculated multipler for frequency to table index (tableLength/sampleRate)
+	double frqToIndex;
+	/// pre-calculated multipler for radians to table index (tableLength/twoPI)
+	double radToIndex;
+	/// wave table length
+	double tableLength;
+	/// wave table length as integer
+	Int32  intTableLength;
+	/// maximum phase increment for wavetables (ftableLength/2)
+	double maxIncrWT;
+
+
 
 	/// Constructor. The constructor for \p SynthConfig initializes
 	/// member variables to default values by calling \p Init().
@@ -70,8 +81,6 @@ public:
 		sampleScale = pow( 2.0, (16.0 - 1.0));
 
 		int i;
-		// Equal tempered tuning system at A4=440 (Western standard)
-		// Middle C = C4 = index 48
 		double frq = 13.75 * pow(2.0, 0.25); // C1 = A0*2^(3/12) = 16.35159...
 		double two12 = pow(2.0, 1.0/12.0); // 2^(1/12) = 1.059463094...
 		for (i = 0; i < 128; i++)
@@ -85,12 +94,22 @@ public:
 
 
 	//initializes most of the object's variables
-	void Init(Int32 sr = 44100)
+	void Init(Int32 sr = 44100, Int32 tl = 16384)
 	{
+		//setting sample rate to the standard but can br changed by calling init with a different value
 		sampleRate = (float) sr;
 		nyquist = sampleRate * 0.5;
 		isampleRate = sr;
 		frqRad = twoPI / (double) sampleRate;
+
+		//setting table length to the standard but can br changed by calling init with a different value
+		intTableLength = tl;
+		tableLength = (double) tl;
+		maxIncrWT = tableLength * 0.5;
+
+		//calculating the ToIndex conversion multipliers 
+		frqToIndex = tableLength / (double) sampleRate;
+		radToIndex = tableLength / twoPI;
 	}
 
 
@@ -111,4 +130,3 @@ extern GlobalJeffrey Jeffrey;
 
 
 #endif	/* GLOBALS_H */
-
