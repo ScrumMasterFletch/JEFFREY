@@ -3,7 +3,7 @@
 
 ///	constructor
 Oscillator::Oscillator(){
-mOscillatorMode = OSCILLATOR_MODE_SAW;
+mOscillatorMode = OSCILLATOR_MODE_SINE;
         mPI =(2*acos(0.0));
 		twoPI = (2 * mPI); // This line is new
         isMuted =(true);
@@ -12,6 +12,8 @@ mOscillatorMode = OSCILLATOR_MODE_SAW;
         mSampleRate = (44100.0);
 		updateIncrement();
 }
+
+
 
 //SETTERS
 void Oscillator::setMode(OscillatorMode mode) {

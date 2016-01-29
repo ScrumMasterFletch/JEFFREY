@@ -12,7 +12,7 @@ need to use in a control
 
 */
 #define PLUG_MFR "Austin"
-#define PLUG_NAME "MIDI"
+#define PLUG_NAME "MIDIDistSine"
 
 #define PLUG_CLASS_NAME MyFirstPlugin
 

@@ -12,6 +12,7 @@ enum EParams
 {
   //these two were for the knobs
   //kFrequency = 0,
+  kThreshold = 0,
   //kThreshold = 1,
   kNumParams
 };
@@ -103,8 +104,23 @@ MyFirstPlugin::MyFirstPlugin(IPlugInstanceInfo instanceInfo)
     :   IPLUG_CTOR(kNumParams, kNumPrograms, instanceInfo) {
     TRACE;
 
+	///THRESHOLD (distortion knob)
+    GetParam(kThreshold)->InitDouble("Threshold", 0.01, 0.01, 100.0, 0.01, "%");
+    GetParam(kThreshold)->SetShape(1.);
+
     IGraphics* pGraphics = MakeGraphics(this, kWidth, kHeight);
     pGraphics->AttachPanelBackground(&COLOR_RED);
+
+
+	/// DECLARING/INITIALIZING distortion KNOB=============================================================
+    //initializes the bit map for the knob, used in the rotating/frames
+    IBitmap knob2 = pGraphics->LoadIBitmap(KNOB_ID, KNOB_FN, kKnobFrames2);
+
+    //attaches the knob to the GUI, specifies the parameters of the knob, and what it controls
+    pGraphics->AttachControl(new IKnobMultiControl(this, kThresholdX, kThresholdY, kThreshold, &knob2));
+
+
+
     AttachGraphics(pGraphics);
     CreatePresets();
 }
@@ -135,16 +151,52 @@ void MyFirstPlugin::ProcessDoubleReplacing(
     double *leftOutput = outputs[0];
     double *rightOutput = outputs[1];
 
+	double beforeDistortion;
+	double afterDistortion;
+
     for (int i = 0; i < nFrames; ++i) {
+		//makes sure we're generating the right pitch at the right moment
+		//this is the function thaty keeps LastVelocity and LastFrequency correct
         mMidiRec.advance();
+
+		//the velocity is how the note was pressed and equates to volume,
+		//i think only midi keyboards will send this as other than 127(aka full volume)
         int velocity = mMidiRec.getLastVelocity();
+
+		//if velocity is 0,nothing needs to be played
         if (velocity > 0) {
+			//updates the frequency aka pitch aka current note being played
             LilJeffrey.setFrequency(mMidiRec.getLastFrequency());
             LilJeffrey.setMuted(false);
-        } else {
+        } 
+		else {
             LilJeffrey.setMuted(true);
+        }            
+		
+		//beforeDist is the sample before the clipping (Vel/127 equates to volume)
+	    beforeDistortion = LilJeffrey.nextSample() * (velocity / 127.0);
+
+
+		if(beforeDistortion >= 0) {
+		  // Make sure positive values can't go above the Frequency:
+		   if (beforeDistortion > mThreshold)
+			  afterDistortion = mThreshold;
+		   else
+			  afterDistortion = beforeDistortion;
+        } 
+		else {
+		  // Make sure negative values can't go below the Frequency:
+		   if (beforeDistortion < -mThreshold)
+			  afterDistortion = -mThreshold;
+		   else
+			  afterDistortion = beforeDistortion;
         }
-        leftOutput[i] = rightOutput[i] = LilJeffrey.nextSample() * velocity / 127.0;
+		
+		//compensating for the loss of volume due to the clipping
+	    afterDistortion /= mThreshold;
+
+		//setting the output buffers equal to the final value to be outputted aka played                                                         
+        leftOutput[i] = rightOutput[i] = afterDistortion;
     }
 
     mMidiRec.Flush(nFrames);
@@ -162,6 +214,7 @@ void MyFirstPlugin::Reset()
 {
   TRACE;
   IMutexLock lock(this);
+  //sets the oscillator's SR to the Iplug's value
   LilJeffrey.setSampleRate(GetSampleRate());
 }
 
@@ -179,23 +232,26 @@ void MyFirstPlugin::OnParamChange(int paramIdx)
 {
   IMutexLock lock(this);
 
-  /*  NEEDED IN ITERATION WITH 2 KNOBS
+  //  NEEDED IN ITERATION WITH 2 KNOBS
 
   //needs to modify all params
   switch (paramIdx)
   {
+	  /*
     case kFrequency:
       LilJeffrey.setFrequency(GetParam(kFrequency)->Value());
       break;
+      */
 
     case kThreshold:
+		//sets the member value equal to the param value from the knob
          mThreshold = GetParam(kThreshold)->Value() / 100.;
       break;
 
     default:
       break;
   }
-  */
+  
 }
 
 
