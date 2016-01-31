@@ -19,6 +19,7 @@ enum EParams
   kDecay = 2,
   kSustain = 3,
   kRelease = 4,
+  kWaveform = 5,
   kNumParams
 };
 
@@ -110,13 +111,20 @@ MyFirstPlugin::MyFirstPlugin(IPlugInstanceInfo instanceInfo):IPLUG_CTOR(kNumPara
     GetParam(kRelease)->InitDouble("Release", 1, 0.01, 2.0, 0.01, "Sec");
     GetParam(kRelease)->SetShape(1.);
 
+	GetParam(kWaveform)->InitEnum("Waveform", OSCILLATOR_MODE_SINE, kNumOscillatorModes);
+    GetParam(kWaveform)->SetDisplayText(0, "Sine"); // Needed for VST3, thanks plunntic
 
 	//============================================================================
 	//  GUI COMPONENTS
 	//============================================================================
+
     IGraphics* pGraphics = MakeGraphics(this, kWidth, kHeight);
     pGraphics->AttachPanelBackground(&COLOR_RED);
 
+	// Waveform switch
+  
+    IBitmap waveformBitmap = pGraphics->LoadIBitmap(WAVEFORM_ID, WAVEFORM_FN, 4);
+    pGraphics->AttachControl(new ISwitchControl(this, 50, 350, kWaveform, &waveformBitmap));
 
 	/// DISTORTION KNOB
     //initializes the bit map for the knob, used in the rotating/frames
@@ -267,7 +275,6 @@ void MyFirstPlugin::OnParamChange(int paramIdx)
       LilJeffrey.setFrequency(GetParam(kFrequency)->Value());
       break;
       */
-
     case kThreshold:
 		//sets the member value equal to the param value from the knob
          mThreshold = GetParam(kThreshold)->Value()/ 100.;
@@ -292,6 +299,11 @@ void MyFirstPlugin::OnParamChange(int paramIdx)
 		//sets the member value equal to the param value from the knob
          mEnvGen.setStageValues(STAGE_RELEASE, (GetParam(kRelease)->Value())  );
       break;
+
+	case kWaveform:
+      LilJeffrey.setMode(static_cast<OscillatorMode>(GetParam(kWaveform)->Int()));
+      break;
+
 
     default:
       break;
