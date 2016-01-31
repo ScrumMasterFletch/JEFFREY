@@ -3,6 +3,8 @@
 #include "IControl.h"
 #include "resource.h"
 #include "Oscillator.h"
+#include "EnvelopeStuff.h"
+
 
 
 const int kNumPrograms = 5;
@@ -13,7 +15,10 @@ enum EParams
   //these two were for the knobs
   //kFrequency = 0,
   kThreshold = 0,
-  //kThreshold = 1,
+  kAttack = 1,
+  kDecay = 2,
+  kSustain = 3,
+  kRelease = 4,
   kNumParams
 };
 
@@ -27,6 +32,7 @@ enum ELayout
   //kKnobFrames = 128
 };
 
+//distortion knob stats
 enum ELayout2
 {
   kThresholdX = 500,
@@ -34,60 +40,38 @@ enum ELayout2
   kKnobFrames2 = 128
 };
 
-
-/*
-MyFirstPlugin::MyFirstPlugin(IPlugInstanceInfo instanceInfo)
-  :	IPLUG_CTOR(kNumParams, kNumPrograms, instanceInfo), mFrequency(1.)
+//Attack knob stats
+enum ELayout3
 {
-  TRACE;
-  
-  //==============================================================================
-  //  PARAMETERS
-  ///Parameters can either be double, enum, int, or bool e.g. ->InitBool(...); etc
-  //each type of param expects different parameters in the init() call
+  kAttackX = 50,
+  kAttackY = 50,
+  kKnobFrames3 = 128
+};
 
-  //adding a param with type(double), name, defaultVal, minVal, maxVal, step, label
-  ///this is defines the index as kFrequency from the Eparams enum
-  GetParam(kFrequency)->InitDouble("Frequency", 440.0, 50.0, 7900.0, 0.01, "Hz");
-  GetParam(kFrequency)->SetShape(2.);
+//Decay knob stats
+enum ELayout4
+{
+  kDecayX = 250,
+  kDecayY = 50,
+  kKnobFrames4 = 128
+};
 
+//Sustain knob stats
+enum ELayout5
+{
+  kSustainX = 450,
+  kSustainY = 50,
+  kKnobFrames5 = 128
+};
 
-  ///THRESHOLD
-  GetParam(kThreshold)->InitDouble("Threshold", 0.01, 0.01, 100.0, 0.01, "%");
-  GetParam(kThreshold)->SetShape(1.);
+//Release knob stats
+enum ELayout6
+{
+  kReleaseX = 650,
+  kReleaseY = 50,
+  kKnobFrames6 = 128
+};
 
-
-  //essentially instantiating the GUI object
-  IGraphics* pGraphics = MakeGraphics(this, kWidth, kHeight);
-  //pGraphics->AttachPanelBackground(&COLOR_TRANSPARENT);    //basic color background
-  pGraphics->AttachBackground(BACKGROUND_ID, BACKGROUND_FN); //star wars background
-
-
-
-  ///FIRST KNOB
-  //
-  IBitmap knob = pGraphics->LoadIBitmap(KNOB_ID, KNOB_FN, kKnobFrames);
-
-  pGraphics->AttachControl(new IKnobMultiControl(this, kFrequencyX, kFrequencyY, kFrequency, &knob));
-
-
-
-  /// DECLARING/INITIALIZING SECOND KNOB=============================================================
-  //initializes the bit map for the knob, used in the rotating/frames
-  IBitmap knob2 = pGraphics->LoadIBitmap(KNOB_ID, KNOB_FN, kKnobFrames);
-
-  //attaches the knob to the GUI, specifies the parameters of the knob, and what it controls
-  pGraphics->AttachControl(new IKnobMultiControl(this, kThresholdX, kThresholdY, kThreshold, &knob2));
-
-
-  //kind of universal final GUI init call
-  AttachGraphics(pGraphics);
-
-  //MakePreset("preset 1", ... );
-  //MakeDefaultPreset((char *) "-", kNumPrograms);
-  CreatePresets();
-}
-*/
 
 
 ///=====================================================================================================
@@ -100,29 +84,71 @@ plugin constructor
 - create factory presets
 */
 // HUNTER, DERNAY, ETC this is the constructor for the Jeffrey with MIDI/oscillator only, KNOBS are in above constructor
-MyFirstPlugin::MyFirstPlugin(IPlugInstanceInfo instanceInfo)
-    :   IPLUG_CTOR(kNumParams, kNumPrograms, instanceInfo) {
+MyFirstPlugin::MyFirstPlugin(IPlugInstanceInfo instanceInfo):IPLUG_CTOR(kNumParams, kNumPrograms, instanceInfo) {
     TRACE;
 
-	///THRESHOLD (distortion knob)
+	//============================================================================
+	//  PARAMETERS
+	//============================================================================
+	///THRESHOLD (distortion knob)    name, defaultVal, minVal, maxVal, step, label
     GetParam(kThreshold)->InitDouble("Threshold", 0.01, 0.01, 100.0, 0.01, "%");
     GetParam(kThreshold)->SetShape(1.);
 
+	///ATTACK (attack knob) limited to 2 seconds
+    GetParam(kAttack)->InitDouble("Attack", 0.01, 0.01, 2.0, 0.01, "Sec");
+    GetParam(kAttack)->SetShape(1.);
+
+	///DECAY (decay knob) limited to one second
+    GetParam(kDecay)->InitDouble("Decay", 0.5, 0.01, 1.0, 0.01, "Sec");
+    GetParam(kDecay)->SetShape(1.);
+
+	///SUSTAIN (sustain knob) maxes at .7 so there will actually be decay
+    GetParam(kSustain)->InitDouble("Sustain", 0.3, 0.01, 0.7, 0.01, "Lvl");
+    GetParam(kSustain)->SetShape(1.);
+
+	///RELEASE (release knob) limited to 2 seconds
+    GetParam(kRelease)->InitDouble("Release", 1, 0.01, 2.0, 0.01, "Sec");
+    GetParam(kRelease)->SetShape(1.);
+
+
+	//============================================================================
+	//  GUI COMPONENTS
+	//============================================================================
     IGraphics* pGraphics = MakeGraphics(this, kWidth, kHeight);
     pGraphics->AttachPanelBackground(&COLOR_RED);
 
 
-	/// DECLARING/INITIALIZING distortion KNOB=============================================================
+	/// DISTORTION KNOB
     //initializes the bit map for the knob, used in the rotating/frames
     IBitmap knob2 = pGraphics->LoadIBitmap(KNOB_ID, KNOB_FN, kKnobFrames2);
-
     //attaches the knob to the GUI, specifies the parameters of the knob, and what it controls
     pGraphics->AttachControl(new IKnobMultiControl(this, kThresholdX, kThresholdY, kThreshold, &knob2));
 
 
+	///ATTACK KNOB
+    IBitmap knob3 = pGraphics->LoadIBitmap(KNOB_ID, KNOB_FN, kKnobFrames3);
+    pGraphics->AttachControl(new IKnobMultiControl(this, kAttackX, kAttackY, kAttack, &knob3));
 
+	///DECAY KNOB
+    IBitmap knob4 = pGraphics->LoadIBitmap(KNOB_ID, KNOB_FN, kKnobFrames4);
+    pGraphics->AttachControl(new IKnobMultiControl(this, kDecayX, kDecayY, kDecay, &knob4));
+	  
+	///SUSTAIN KNOB
+    IBitmap knob5 = pGraphics->LoadIBitmap(KNOB_ID, KNOB_FN, kKnobFrames5);
+    pGraphics->AttachControl(new IKnobMultiControl(this, kSustainX, kSustainY, kSustain, &knob5));
+
+	///RELEASE KNOB
+    IBitmap knob6 = pGraphics->LoadIBitmap(KNOB_ID, KNOB_FN, kKnobFrames6);
+    pGraphics->AttachControl(new IKnobMultiControl(this, kReleaseX, kReleaseY, kRelease, &knob6));
+
+	//finalizing GUI
     AttachGraphics(pGraphics);
     CreatePresets();
+
+
+	//attaching the signals in the MidiReceiver to the MyFirstPlugin functions
+	mMidiRec.noteOn.Connect(this, &MyFirstPlugin::onNoteOn);
+    mMidiRec.noteOff.Connect(this, &MyFirstPlugin::onNoteOff);
 }
 
 
@@ -141,10 +167,7 @@ channel
 zeros if the host hasn’t connected them
 */
 ///processDoubleReplacing is the DSP part
-void MyFirstPlugin::ProcessDoubleReplacing(
-    double** inputs,
-    double** outputs,
-    int nFrames)
+void MyFirstPlugin::ProcessDoubleReplacing(double** inputs, double** outputs, int nFrames)
 {
     // Mutex is already locked for us.
 
@@ -173,8 +196,9 @@ void MyFirstPlugin::ProcessDoubleReplacing(
             LilJeffrey.setMuted(true);
         }            
 		
+		///notice here that the envelope value is also used now :)
 		//beforeDist is the sample before the clipping (Vel/127 equates to volume)
-	    beforeDistortion = LilJeffrey.nextSample() * (velocity / 127.0);
+	    beforeDistortion = LilJeffrey.nextSample() * mEnvGen.nextSample() *  (velocity / 127.0);
 
 
 		if(beforeDistortion >= 0) {
@@ -216,6 +240,7 @@ void MyFirstPlugin::Reset()
   IMutexLock lock(this);
   //sets the oscillator's SR to the Iplug's value
   LilJeffrey.setSampleRate(GetSampleRate());
+  mEnvGen.setSampleRate(GetSampleRate());
 }
 
 
@@ -245,7 +270,27 @@ void MyFirstPlugin::OnParamChange(int paramIdx)
 
     case kThreshold:
 		//sets the member value equal to the param value from the knob
-         mThreshold = GetParam(kThreshold)->Value() / 100.;
+         mThreshold = GetParam(kThreshold)->Value()/ 100.;
+      break;
+
+	case kAttack:
+		//sets the member value equal to the param value from the knob
+         mEnvGen.setStageValues(STAGE_ATTACK, (GetParam(kAttack)->Value())  );
+      break;
+
+	case kDecay:
+		//sets the member value equal to the param value from the knob
+         mEnvGen.setStageValues(STAGE_DECAY, (GetParam(kDecay)->Value())  );
+      break;
+
+	case kSustain:
+		//sets the member value equal to the param value from the knob
+         mEnvGen.setStageValues(STAGE_SUSTAIN, (GetParam(kSustain)->Value())  );
+      break;
+
+	case kRelease:
+		//sets the member value equal to the param value from the knob
+         mEnvGen.setStageValues(STAGE_RELEASE, (GetParam(kRelease)->Value())  );
       break;
 
     default:
@@ -253,25 +298,6 @@ void MyFirstPlugin::OnParamChange(int paramIdx)
   }
   
 }
-
-
-
-/*
-void MyFirstPlugin::CreatePresets() {
-
-  //makepreset is an IplugBase function
-  //takes input for each param in order(Eparam), so thats why only 1 argument here, only one param
-  MakePreset("clean", 100.0);
-  MakePreset("slightly distorted", 80.0);
-  MakePreset("woooo", 40.0);
-  MakePreset("waaaa", 20.0);
-  MakePreset("buzzz!!!", 0.01);
-}*/
-
-/*
-void MyFirstPlugin::CreatePresets() {
-  MakePreset("clean", 440.0);
-}*/
 
 
 
