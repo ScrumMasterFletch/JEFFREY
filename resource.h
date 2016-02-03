@@ -11,8 +11,8 @@ specifies various properties of the plugin
 need to use in a control
 
 */
-#define PLUG_MFR "Austin"
-#define PLUG_NAME "ADSRKnobs1"
+#define PLUG_MFR "Hunter"
+#define PLUG_NAME "FilterCYAN"
 
 #define PLUG_CLASS_NAME MyFirstPlugin
 
@@ -32,7 +32,6 @@ need to use in a control
 #define PLUG_VER 0x00010000
 #define VST3_VER_STR "1.0.0"
 
-// http://service.steinberg.de/databases/plugin.nsf/plugIn?openForm
 // 4 chars, single quotes. At least one capital letter
 #define PLUG_UNIQUE_ID 'Ipef'
 // make sure this is not the same as BUNDLE_MFR
@@ -80,12 +79,18 @@ instrument determined by PLUG _IS _INST
 // Unique IDs for each image resource.
 #define KNOB_ID 101
 #define BACKGROUND_ID 102
+#define WAVEFORM_ID 103
+#define KNOB_SMALL_ID 104
+#define	FILTERMODE_ID 105
 
 
 ///================================================================
 // Image resource locations for this plug.
-#define KNOB_FN "resources/img/knob.png"
+#define KNOB_FN "resources/img/cyan_knob.png"
 #define BACKGROUND_FN "resources/img/background.png"
+#define WAVEFORM_FN   "resources/img/waveform.png"
+#define KNOB_SMALL_FN "resources/img/cyan_knob.png"
+#define FILTERMODE_FN "resources/img/filtermode.png"
 
 // GUI default dimensions
 #define GUI_WIDTH 768

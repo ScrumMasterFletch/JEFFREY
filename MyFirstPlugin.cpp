@@ -19,6 +19,17 @@ enum EParams
   kDecay = 2,
   kSustain = 3,
   kRelease = 4,
+  kWaveform = 5,
+
+  kFilterMode,
+  kFilterCutoff,
+  kFilterResonance,
+  kFilterAttack,
+  kFilterDecay,
+  kFilterSustain,
+  kFilterRelease,
+  kFilterEnvelopeAmount,
+
   kNumParams
 };
 
@@ -37,7 +48,8 @@ enum ELayout2
 {
   kThresholdX = 500,
   kThresholdY = 300,
-  kKnobFrames2 = 128
+  //kKnobFrames2 = 128
+  kKnobFrames2 = 31
 };
 
 //Attack knob stats
@@ -45,7 +57,7 @@ enum ELayout3
 {
   kAttackX = 50,
   kAttackY = 50,
-  kKnobFrames3 = 128
+  kKnobFrames3 = 31
 };
 
 //Decay knob stats
@@ -53,7 +65,7 @@ enum ELayout4
 {
   kDecayX = 250,
   kDecayY = 50,
-  kKnobFrames4 = 128
+  kKnobFrames4 = 31
 };
 
 //Sustain knob stats
@@ -61,7 +73,7 @@ enum ELayout5
 {
   kSustainX = 450,
   kSustainY = 50,
-  kKnobFrames5 = 128
+  kKnobFrames5 = 31
 };
 
 //Release knob stats
@@ -69,7 +81,7 @@ enum ELayout6
 {
   kReleaseX = 650,
   kReleaseY = 50,
-  kKnobFrames6 = 128
+  kKnobFrames6 = 31
 };
 
 
@@ -110,13 +122,42 @@ MyFirstPlugin::MyFirstPlugin(IPlugInstanceInfo instanceInfo):IPLUG_CTOR(kNumPara
     GetParam(kRelease)->InitDouble("Release", 1, 0.01, 2.0, 0.01, "Sec");
     GetParam(kRelease)->SetShape(1.);
 
+	///Filter Envelope Knobs
+		///ATTACK (attack knob) limited to 2 seconds
+		GetParam(kFilterAttack)->InitDouble("Attack", 0.01, 0.01, 2.0, 0.01, "Sec");
+		GetParam(kFilterAttack)->SetShape(1.);
+
+		///DECAY (decay knob) limited to one second
+		GetParam(kFilterDecay)->InitDouble("Decay", 0.5, 0.01, 1.0, 0.01, "Sec");
+		GetParam(kFilterDecay)->SetShape(1.);
+
+		///SUSTAIN (sustain knob) maxes at .7 so there will actually be decay
+		GetParam(kFilterSustain)->InitDouble("Sustain", 0.3, 0.01, 0.7, 0.01, "Lvl");
+		GetParam(kFilterSustain)->SetShape(1.);
+
+		///RELEASE (release knob) limited to 2 seconds
+		GetParam(kFilterRelease)->InitDouble("Release", 1, 0.01, 2.0, 0.01, "Sec");
+		GetParam(kFilterRelease)->SetShape(1.);
+
+	GetParam(kWaveform)->InitEnum("Waveform", OSCILLATOR_MODE_SINE, kNumOscillatorModes);
+    GetParam(kWaveform)->SetDisplayText(0, "Sine"); // Needed for VST3, thanks plunntic
+
+	GetParam(kFilterMode)->InitEnum("Filter Mode", Filter::FILTER_MODE_LOWPASS, Filter::kNumFilterModes);
 
 	//============================================================================
 	//  GUI COMPONENTS
 	//============================================================================
-    IGraphics* pGraphics = MakeGraphics(this, kWidth, kHeight);
-    pGraphics->AttachPanelBackground(&COLOR_RED);
 
+    IGraphics* pGraphics = MakeGraphics(this, kWidth, kHeight);
+    pGraphics->AttachPanelBackground(&COLOR_TRANSPARENT);
+
+	// Waveform switch
+    IBitmap waveformBitmap = pGraphics->LoadIBitmap(WAVEFORM_ID, WAVEFORM_FN, 4);
+    pGraphics->AttachControl(new ISwitchControl(this, 50, 350, kWaveform, &waveformBitmap));
+
+	// Filtermode Switch
+	IBitmap filtermodeBitmap = pGraphics->LoadIBitmap(FILTERMODE_ID, FILTERMODE_FN, 3);
+	pGraphics->AttachControl(new ISwitchControl(this, 50, 275, kFilterMode, &filtermodeBitmap));
 
 	/// DISTORTION KNOB
     //initializes the bit map for the knob, used in the rotating/frames
@@ -140,6 +181,42 @@ MyFirstPlugin::MyFirstPlugin(IPlugInstanceInfo instanceInfo):IPLUG_CTOR(kNumPara
 	///RELEASE KNOB
     IBitmap knob6 = pGraphics->LoadIBitmap(KNOB_ID, KNOB_FN, kKnobFrames6);
     pGraphics->AttachControl(new IKnobMultiControl(this, kReleaseX, kReleaseY, kRelease, &knob6));
+
+	/// Knobs for filter cutoff and resonance
+	IBitmap smallKnobBitmap = pGraphics->LoadIBitmap(KNOB_SMALL_ID, KNOB_SMALL_FN, 31);
+
+		// Cutoff Knob:
+		GetParam(kFilterCutoff)->InitDouble("Cutoff", 0.99, 0.01, 0.99, 0.001);
+		GetParam(kFilterCutoff)->SetShape(2);
+		pGraphics->AttachControl(new IKnobMultiControl(this, 100, 275, kFilterCutoff, &smallKnobBitmap));
+		// Resonance Knob:
+		GetParam(kFilterResonance)->InitDouble("Resonance", 0.01, 0.01, 1.0, 0.001);
+		pGraphics->AttachControl(new IKnobMultiControl(this, 165, 275, kFilterResonance, &smallKnobBitmap));
+
+	/// Knobs for filter envelope
+		// Filter Attack knob
+		GetParam(kFilterAttack)->InitDouble("Filter Env Attack", 0.01, 0.01, 10.0, 0.001);
+		GetParam(kFilterAttack)->SetShape(3);
+		pGraphics->AttachControl(new IKnobMultiControl(this, 100, 215, kFilterAttack, &smallKnobBitmap));
+
+		// Filter Decay knob:
+		GetParam(kFilterDecay)->InitDouble("Filter Env Decay", 0.5, 0.01, 15.0, 0.001);
+		GetParam(kFilterDecay)->SetShape(3);
+		pGraphics->AttachControl(new IKnobMultiControl(this, 165, 215, kFilterDecay, &smallKnobBitmap));
+
+		// Filter Sustain knob:
+		GetParam(kFilterSustain)->InitDouble("Filter Env Sustain", 0.1, 0.001, 1.0, 0.001);
+		GetParam(kFilterSustain)->SetShape(2);
+		pGraphics->AttachControl(new IKnobMultiControl(this, 230, 215, kFilterSustain, &smallKnobBitmap));
+
+		// Filter Release knob:
+		GetParam(kFilterRelease)->InitDouble("Filter Env Release", 1.0, 0.001, 15.0, 0.001);
+		GetParam(kFilterRelease)->SetShape(3);
+		pGraphics->AttachControl(new IKnobMultiControl(this, 295, 215, kFilterRelease, &smallKnobBitmap));
+
+		// Filter envelope amount knob:
+		GetParam(kFilterEnvelopeAmount)->InitDouble("Filter Env Amount", 0.0, -1.0, 1.0, 0.001);
+		pGraphics->AttachControl(new IKnobMultiControl(this, 360, 215, kFilterEnvelopeAmount, &smallKnobBitmap));
 
 	//finalizing GUI
     AttachGraphics(pGraphics);
@@ -177,6 +254,8 @@ void MyFirstPlugin::ProcessDoubleReplacing(double** inputs, double** outputs, in
 	double beforeDistortion;
 	double afterDistortion;
 
+	
+
     for (int i = 0; i < nFrames; ++i) {
 		//makes sure we're generating the right pitch at the right moment
 		//this is the function thaty keeps LastVelocity and LastFrequency correct
@@ -196,9 +275,12 @@ void MyFirstPlugin::ProcessDoubleReplacing(double** inputs, double** outputs, in
             LilJeffrey.setMuted(true);
         }            
 		
+		//needed for filter envelope
+		mFilter.setCutoffMod(mFilterEnvGen.nextSample() * filterEnvelopeAmount);
+
 		///notice here that the envelope value is also used now :)
 		//beforeDist is the sample before the clipping (Vel/127 equates to volume)
-	    beforeDistortion = LilJeffrey.nextSample() * mEnvGen.nextSample() *  (velocity / 127.0);
+	    beforeDistortion = mFilter.process(LilJeffrey.nextSample() * mEnvGen.nextSample() *  (velocity / 127.0));
 
 
 		if(beforeDistortion >= 0) {
@@ -241,6 +323,7 @@ void MyFirstPlugin::Reset()
   //sets the oscillator's SR to the Iplug's value
   LilJeffrey.setSampleRate(GetSampleRate());
   mEnvGen.setSampleRate(GetSampleRate());
+  mFilterEnvGen.setSampleRate(GetSampleRate());
 }
 
 
@@ -267,7 +350,6 @@ void MyFirstPlugin::OnParamChange(int paramIdx)
       LilJeffrey.setFrequency(GetParam(kFrequency)->Value());
       break;
       */
-
     case kThreshold:
 		//sets the member value equal to the param value from the knob
          mThreshold = GetParam(kThreshold)->Value()/ 100.;
@@ -292,6 +374,42 @@ void MyFirstPlugin::OnParamChange(int paramIdx)
 		//sets the member value equal to the param value from the knob
          mEnvGen.setStageValues(STAGE_RELEASE, (GetParam(kRelease)->Value())  );
       break;
+
+	case kWaveform:
+		LilJeffrey.setMode(static_cast<OscillatorMode>(GetParam(kWaveform)->Int()));
+      break;
+
+	case kFilterCutoff:
+		mFilter.setCutoff(GetParam(paramIdx)->Value());
+      break;
+
+	case kFilterResonance:
+		mFilter.setResonance(GetParam(paramIdx)->Value());
+      break;
+
+	case kFilterMode:
+		mFilter.setFilterMode(static_cast<Filter::FilterMode>(GetParam(paramIdx)->Int()));
+      break;
+
+	case kFilterAttack:
+         mFilterEnvGen.setStageValues(STAGE_ATTACK, (GetParam(kFilterAttack)->Value())  );
+      break;
+
+	case kFilterDecay:
+         mFilterEnvGen.setStageValues(STAGE_DECAY, (GetParam(kFilterDecay)->Value())  );
+	  break;
+
+	case kFilterSustain:
+         mFilterEnvGen.setStageValues(STAGE_SUSTAIN, (GetParam(kFilterSustain)->Value())  );
+	  break;
+
+	case kFilterRelease:
+         mFilterEnvGen.setStageValues(STAGE_RELEASE, (GetParam(kFilterRelease)->Value())  );
+	  break;
+
+	case kFilterEnvelopeAmount:
+		filterEnvelopeAmount = GetParam(paramIdx)->Value();
+	  break;
 
     default:
       break;
