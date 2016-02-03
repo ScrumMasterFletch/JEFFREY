@@ -30,7 +30,6 @@ enum EParams
   kFilterRelease,
   kFilterEnvelopeAmount,
 
-
   kNumParams
 };
 
@@ -39,51 +38,9 @@ enum ELayout
   kWidth = GUI_WIDTH,
   kHeight = GUI_HEIGHT,
 
-  //kFrequencyX = 334,
-  //kFrequencyY = 166,
-  //kKnobFrames = 128
+
 };
 
-//distortion knob stats
-enum ELayout2
-{
-  kThresholdX = 500,
-  kThresholdY = 300,
-  //kKnobFrames2 = 128
-  kKnobFrames2 = 31
-};
-
-//Attack knob stats
-enum ELayout3
-{
-  kAttackX = 50,
-  kAttackY = 50,
-  kKnobFrames3 = 31
-};
-
-//Decay knob stats
-enum ELayout4
-{
-  kDecayX = 250,
-  kDecayY = 50,
-  kKnobFrames4 = 31
-};
-
-//Sustain knob stats
-enum ELayout5
-{
-  kSustainX = 450,
-  kSustainY = 50,
-  kKnobFrames5 = 31
-};
-
-//Release knob stats
-enum ELayout6
-{
-  kReleaseX = 650,
-  kReleaseY = 50,
-  kKnobFrames6 = 31
-};
 
 
 
@@ -107,53 +64,56 @@ MyFirstPlugin::MyFirstPlugin(IPlugInstanceInfo instanceInfo):IPLUG_CTOR(kNumPara
     GetParam(kThreshold)->InitDouble("Threshold", 0.01, 0.01, 100.0, 0.01, "%");
     GetParam(kThreshold)->SetShape(1.);
 
-	///ATTACK (attack knob) limited to 2 seconds
+	///ADSR ENVELOPE
+	//ATTACK (attack knob) limited to 2 seconds
     GetParam(kAttack)->InitDouble("Attack", 0.01, 0.01, 2.0, 0.01, "Sec");
     GetParam(kAttack)->SetShape(1.);
-
-	///DECAY (decay knob) limited to one second
+	//DECAY (decay knob) limited to one second
     GetParam(kDecay)->InitDouble("Decay", 0.5, 0.01, 1.0, 0.01, "Sec");
     GetParam(kDecay)->SetShape(1.);
-
-	///SUSTAIN (sustain knob) maxes at .7 so there will actually be decay
+	//SUSTAIN (sustain knob) maxes at .7 so there will actually be decay
     GetParam(kSustain)->InitDouble("Sustain", 0.3, 0.01, 0.7, 0.01, "Lvl");
     GetParam(kSustain)->SetShape(1.);
-
-	///RELEASE (release knob) limited to 2 seconds
+	//RELEASE (release knob) limited to 2 seconds
     GetParam(kRelease)->InitDouble("Release", 1, 0.01, 2.0, 0.01, "Sec");
     GetParam(kRelease)->SetShape(1.);
 
+	
+	///FILTER AND FILTER ENVELOPE PARAMS
+	// FILTER CUTOFF
+	GetParam(kFilterCutoff)->InitDouble("Cutoff", 0.99, 0.01, 0.99, 0.001);
+	GetParam(kFilterCutoff)->SetShape(2);
+	// FILTER RESONANCE
+	GetParam(kFilterResonance)->InitDouble("Resonance", 0.01, 0.01, 1.0, 0.001);
+	// FILTER ATTACK
+	GetParam(kFilterAttack)->InitDouble("Filter Env Attack", 0.01, 0.01, 10.0, 0.001);
+	GetParam(kFilterAttack)->SetShape(3);
+	// FILTER DECAY
+	GetParam(kFilterDecay)->InitDouble("Filter Env Decay", 0.5, 0.01, 15.0, 0.001);
+	GetParam(kFilterDecay)->SetShape(3);
+	// FILTER SUSTAIN
+	GetParam(kFilterSustain)->InitDouble("Filter Env Sustain", 0.1, 0.001, 1.0, 0.001);
+	GetParam(kFilterSustain)->SetShape(2);
+	//FILTER RELEASE
+	GetParam(kFilterRelease)->InitDouble("Filter Env Release", 1.0, 0.001, 15.0, 0.001);
+	GetParam(kFilterRelease)->SetShape(3);
+	//FILTER ENV AMOUNT
+	GetParam(kFilterEnvelopeAmount)->InitDouble("Filter Env Amount", 0.0, -1.0, 1.0, 0.001);
 
-	///Filter Envelope Knobs
-		///ATTACK (attack knob) limited to 2 seconds
-		GetParam(kFilterAttack)->InitDouble("Attack", 0.01, 0.01, 2.0, 0.01, "Sec");
-		GetParam(kFilterAttack)->SetShape(1.);
-
-		///DECAY (decay knob) limited to one second
-		GetParam(kFilterDecay)->InitDouble("Decay", 0.5, 0.01, 1.0, 0.01, "Sec");
-		GetParam(kFilterDecay)->SetShape(1.);
-
-		///SUSTAIN (sustain knob) maxes at .7 so there will actually be decay
-		GetParam(kFilterSustain)->InitDouble("Sustain", 0.3, 0.01, 0.7, 0.01, "Lvl");
-		GetParam(kFilterSustain)->SetShape(1.);
-
-		///RELEASE (release knob) limited to 2 seconds
-		GetParam(kFilterRelease)->InitDouble("Release", 1, 0.01, 2.0, 0.01, "Sec");
-		GetParam(kFilterRelease)->SetShape(1.);
-
-	GetParam(kWaveform)->InitEnum("Waveform", OSCILLATOR_MODE_SINE, kNumOscillatorModes);
+	///WAVEFORM 
+ 	GetParam(kWaveform)->InitEnum("Waveform", OSCILLATOR_MODE_SINE, kNumOscillatorModes);
     GetParam(kWaveform)->SetDisplayText(0, "Sine"); // Needed for VST3, thanks plunntic
 
+	///FILTER MODE
 	GetParam(kFilterMode)->InitEnum("Filter Mode", Filter::FILTER_MODE_LOWPASS, Filter::kNumFilterModes);
 
-	GetParam(kWaveform)->InitEnum("Waveform", OSCILLATOR_MODE_SINE, kNumOscillatorModes);
-    GetParam(kWaveform)->SetDisplayText(0, "Sine"); // Needed for VST3, thanks plunntic
 
 
 	//============================================================================
 	//  GUI COMPONENTS
 	//============================================================================
 
+	///overall gui initialization
     IGraphics* pGraphics = MakeGraphics(this, kWidth, kHeight);
     pGraphics->AttachPanelBackground(&COLOR_TRANSPARENT);
 
@@ -161,77 +121,46 @@ MyFirstPlugin::MyFirstPlugin(IPlugInstanceInfo instanceInfo):IPLUG_CTOR(kNumPara
     IBitmap waveformBitmap = pGraphics->LoadIBitmap(WAVEFORM_ID, WAVEFORM_FN, 4);
     pGraphics->AttachControl(new ISwitchControl(this, 50, 350, kWaveform, &waveformBitmap));
 
-
 	// Filtermode Switch
 	IBitmap filtermodeBitmap = pGraphics->LoadIBitmap(FILTERMODE_ID, FILTERMODE_FN, 3);
 	pGraphics->AttachControl(new ISwitchControl(this, 50, 275, kFilterMode, &filtermodeBitmap));
 
-	// Waveform switch
-  
-    IBitmap waveformBitmap = pGraphics->LoadIBitmap(WAVEFORM_ID, WAVEFORM_FN, 4);
-    pGraphics->AttachControl(new ISwitchControl(this, 50, 350, kWaveform, &waveformBitmap));
-
-
-	/// DISTORTION KNOB
-    //initializes the bit map for the knob, used in the rotating/frames
-    IBitmap knob2 = pGraphics->LoadIBitmap(KNOB_ID, KNOB_FN, kKnobFrames2);
-    //attaches the knob to the GUI, specifies the parameters of the knob, and what it controls
-    pGraphics->AttachControl(new IKnobMultiControl(this, kThresholdX, kThresholdY, kThreshold, &knob2));
-
-
-	///ATTACK KNOB
-    IBitmap knob3 = pGraphics->LoadIBitmap(KNOB_ID, KNOB_FN, kKnobFrames3);
-    pGraphics->AttachControl(new IKnobMultiControl(this, kAttackX, kAttackY, kAttack, &knob3));
-
-	///DECAY KNOB
-    IBitmap knob4 = pGraphics->LoadIBitmap(KNOB_ID, KNOB_FN, kKnobFrames4);
-    pGraphics->AttachControl(new IKnobMultiControl(this, kDecayX, kDecayY, kDecay, &knob4));
-	  
-	///SUSTAIN KNOB
-    IBitmap knob5 = pGraphics->LoadIBitmap(KNOB_ID, KNOB_FN, kKnobFrames5);
-    pGraphics->AttachControl(new IKnobMultiControl(this, kSustainX, kSustainY, kSustain, &knob5));
-
-	///RELEASE KNOB
-    IBitmap knob6 = pGraphics->LoadIBitmap(KNOB_ID, KNOB_FN, kKnobFrames6);
-    pGraphics->AttachControl(new IKnobMultiControl(this, kReleaseX, kReleaseY, kRelease, &knob6));
-
-	/// Knobs for filter cutoff and resonance
+	
+	/// BITMAP FOR ALL CURRENT KNOBS
 	IBitmap smallKnobBitmap = pGraphics->LoadIBitmap(KNOB_SMALL_ID, KNOB_SMALL_FN, 31);
 
-		// Cutoff Knob:
-		GetParam(kFilterCutoff)->InitDouble("Cutoff", 0.99, 0.01, 0.99, 0.001);
-		GetParam(kFilterCutoff)->SetShape(2);
-		pGraphics->AttachControl(new IKnobMultiControl(this, 100, 275, kFilterCutoff, &smallKnobBitmap));
-		// Resonance Knob:
-		GetParam(kFilterResonance)->InitDouble("Resonance", 0.01, 0.01, 1.0, 0.001);
-		pGraphics->AttachControl(new IKnobMultiControl(this, 165, 275, kFilterResonance, &smallKnobBitmap));
+	/// DISTORTION KNOB
+	pGraphics->AttachControl(new IKnobMultiControl(this, 500, 300, kThreshold, &smallKnobBitmap));
 
-	/// Knobs for filter envelope
-		// Filter Attack knob
-		GetParam(kFilterAttack)->InitDouble("Filter Env Attack", 0.01, 0.01, 10.0, 0.001);
-		GetParam(kFilterAttack)->SetShape(3);
-		pGraphics->AttachControl(new IKnobMultiControl(this, 100, 215, kFilterAttack, &smallKnobBitmap));
+	///ENVELOPE KNOBS
+	//ATTACK KNOB
+    pGraphics->AttachControl(new IKnobMultiControl(this, 50, 50, kAttack, &smallKnobBitmap));
+	//DECAY KNOB
+    pGraphics->AttachControl(new IKnobMultiControl(this, 250, 50, kDecay, &smallKnobBitmap));
+	//SUSTAIN KNOB
+    pGraphics->AttachControl(new IKnobMultiControl(this, 450, 50, kSustain, &smallKnobBitmap));
+	//RELEASE KNOB
+    pGraphics->AttachControl(new IKnobMultiControl(this, 650, 50, kRelease, &smallKnobBitmap));
 
-		// Filter Decay knob:
-		GetParam(kFilterDecay)->InitDouble("Filter Env Decay", 0.5, 0.01, 15.0, 0.001);
-		GetParam(kFilterDecay)->SetShape(3);
-		pGraphics->AttachControl(new IKnobMultiControl(this, 165, 215, kFilterDecay, &smallKnobBitmap));
 
-		// Filter Sustain knob:
-		GetParam(kFilterSustain)->InitDouble("Filter Env Sustain", 0.1, 0.001, 1.0, 0.001);
-		GetParam(kFilterSustain)->SetShape(2);
-		pGraphics->AttachControl(new IKnobMultiControl(this, 230, 215, kFilterSustain, &smallKnobBitmap));
+	///FILTER AND FILTER ENVELOPE KNOBS
+	//CUTOFF KNOB
+	pGraphics->AttachControl(new IKnobMultiControl(this, 100, 275, kFilterCutoff, &smallKnobBitmap));
+	//RESONANCE KNOB
+	pGraphics->AttachControl(new IKnobMultiControl(this, 165, 275, kFilterResonance, &smallKnobBitmap));
+	//FILTER ATTACK KNOB
+	pGraphics->AttachControl(new IKnobMultiControl(this, 100, 215, kFilterAttack, &smallKnobBitmap));
+	//FILTER DECAY KNOB
+	pGraphics->AttachControl(new IKnobMultiControl(this, 165, 215, kFilterDecay, &smallKnobBitmap));
+	// FILTER SUSTAIN KNOB
+	pGraphics->AttachControl(new IKnobMultiControl(this, 230, 215, kFilterSustain, &smallKnobBitmap));
+	// FILTER RELEASE KNOB	
+	pGraphics->AttachControl(new IKnobMultiControl(this, 295, 215, kFilterRelease, &smallKnobBitmap));
+	// FILTER AMOUNT KNOB	
+	pGraphics->AttachControl(new IKnobMultiControl(this, 360, 215, kFilterEnvelopeAmount, &smallKnobBitmap));
 
-		// Filter Release knob:
-		GetParam(kFilterRelease)->InitDouble("Filter Env Release", 1.0, 0.001, 15.0, 0.001);
-		GetParam(kFilterRelease)->SetShape(3);
-		pGraphics->AttachControl(new IKnobMultiControl(this, 295, 215, kFilterRelease, &smallKnobBitmap));
 
-		// Filter envelope amount knob:
-		GetParam(kFilterEnvelopeAmount)->InitDouble("Filter Env Amount", 0.0, -1.0, 1.0, 0.001);
-		pGraphics->AttachControl(new IKnobMultiControl(this, 360, 215, kFilterEnvelopeAmount, &smallKnobBitmap));
-
-	//finalizing GUI
+	///finalizing GUI
     AttachGraphics(pGraphics);
     CreatePresets();
 
@@ -389,7 +318,6 @@ void MyFirstPlugin::OnParamChange(int paramIdx)
       break;
 
 	case kWaveform:
-
 		LilJeffrey.setMode(static_cast<OscillatorMode>(GetParam(kWaveform)->Int()));
       break;
 
@@ -424,11 +352,6 @@ void MyFirstPlugin::OnParamChange(int paramIdx)
 	case kFilterEnvelopeAmount:
 		filterEnvelopeAmount = GetParam(paramIdx)->Value();
 	  break;
-
-      LilJeffrey.setMode(static_cast<OscillatorMode>(GetParam(kWaveform)->Int()));
-      break;
-
-
 
     default:
       break;
