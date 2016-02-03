@@ -80,11 +80,10 @@ instrument determined by PLUG _IS _INST
 #define KNOB_ID 101
 #define BACKGROUND_ID 102
 #define WAVEFORM_ID 103
-<<<<<<< HEAD
+
 #define KNOB_SMALL_ID 104
 #define	FILTERMODE_ID 105
-=======
->>>>>>> 403dc9d881124faceccfeaa2ae7afc9aa9fe0d62
+
 
 
 ///================================================================
@@ -92,11 +91,10 @@ instrument determined by PLUG _IS _INST
 #define KNOB_FN "resources/img/cyan_knob.png"
 #define BACKGROUND_FN "resources/img/background.png"
 #define WAVEFORM_FN   "resources/img/waveform.png"
-<<<<<<< HEAD
+
 #define KNOB_SMALL_FN "resources/img/cyan_knob.png"
 #define FILTERMODE_FN "resources/img/filtermode.png"
-=======
->>>>>>> 403dc9d881124faceccfeaa2ae7afc9aa9fe0d62
+
 
 // GUI default dimensions
 #define GUI_WIDTH 768

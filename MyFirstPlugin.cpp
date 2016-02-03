@@ -20,7 +20,6 @@ enum EParams
   kSustain = 3,
   kRelease = 4,
   kWaveform = 5,
-<<<<<<< HEAD
 
   kFilterMode,
   kFilterCutoff,
@@ -31,8 +30,7 @@ enum EParams
   kFilterRelease,
   kFilterEnvelopeAmount,
 
-=======
->>>>>>> 403dc9d881124faceccfeaa2ae7afc9aa9fe0d62
+
   kNumParams
 };
 
@@ -125,7 +123,7 @@ MyFirstPlugin::MyFirstPlugin(IPlugInstanceInfo instanceInfo):IPLUG_CTOR(kNumPara
     GetParam(kRelease)->InitDouble("Release", 1, 0.01, 2.0, 0.01, "Sec");
     GetParam(kRelease)->SetShape(1.);
 
-<<<<<<< HEAD
+
 	///Filter Envelope Knobs
 		///ATTACK (attack knob) limited to 2 seconds
 		GetParam(kFilterAttack)->InitDouble("Attack", 0.01, 0.01, 2.0, 0.01, "Sec");
@@ -147,10 +145,10 @@ MyFirstPlugin::MyFirstPlugin(IPlugInstanceInfo instanceInfo):IPLUG_CTOR(kNumPara
     GetParam(kWaveform)->SetDisplayText(0, "Sine"); // Needed for VST3, thanks plunntic
 
 	GetParam(kFilterMode)->InitEnum("Filter Mode", Filter::FILTER_MODE_LOWPASS, Filter::kNumFilterModes);
-=======
+
 	GetParam(kWaveform)->InitEnum("Waveform", OSCILLATOR_MODE_SINE, kNumOscillatorModes);
     GetParam(kWaveform)->SetDisplayText(0, "Sine"); // Needed for VST3, thanks plunntic
->>>>>>> 403dc9d881124faceccfeaa2ae7afc9aa9fe0d62
+
 
 	//============================================================================
 	//  GUI COMPONENTS
@@ -163,16 +161,16 @@ MyFirstPlugin::MyFirstPlugin(IPlugInstanceInfo instanceInfo):IPLUG_CTOR(kNumPara
     IBitmap waveformBitmap = pGraphics->LoadIBitmap(WAVEFORM_ID, WAVEFORM_FN, 4);
     pGraphics->AttachControl(new ISwitchControl(this, 50, 350, kWaveform, &waveformBitmap));
 
-<<<<<<< HEAD
+
 	// Filtermode Switch
 	IBitmap filtermodeBitmap = pGraphics->LoadIBitmap(FILTERMODE_ID, FILTERMODE_FN, 3);
 	pGraphics->AttachControl(new ISwitchControl(this, 50, 275, kFilterMode, &filtermodeBitmap));
-=======
+
 	// Waveform switch
   
     IBitmap waveformBitmap = pGraphics->LoadIBitmap(WAVEFORM_ID, WAVEFORM_FN, 4);
     pGraphics->AttachControl(new ISwitchControl(this, 50, 350, kWaveform, &waveformBitmap));
->>>>>>> 403dc9d881124faceccfeaa2ae7afc9aa9fe0d62
+
 
 	/// DISTORTION KNOB
     //initializes the bit map for the knob, used in the rotating/frames
@@ -391,7 +389,7 @@ void MyFirstPlugin::OnParamChange(int paramIdx)
       break;
 
 	case kWaveform:
-<<<<<<< HEAD
+
 		LilJeffrey.setMode(static_cast<OscillatorMode>(GetParam(kWaveform)->Int()));
       break;
 
@@ -426,11 +424,11 @@ void MyFirstPlugin::OnParamChange(int paramIdx)
 	case kFilterEnvelopeAmount:
 		filterEnvelopeAmount = GetParam(paramIdx)->Value();
 	  break;
-=======
+
       LilJeffrey.setMode(static_cast<OscillatorMode>(GetParam(kWaveform)->Int()));
       break;
 
->>>>>>> 403dc9d881124faceccfeaa2ae7afc9aa9fe0d62
+
 
     default:
       break;

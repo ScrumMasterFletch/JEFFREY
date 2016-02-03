@@ -2,11 +2,10 @@
 
 KNOB_ID       PNG KNOB_FN
 WAVEFORM_ID   PNG WAVEFORM_FN
-<<<<<<< HEAD
+
 KNOB_SMALL_ID PNG KNOB_SMALL_FN
 FILTERMODE_ID PNG FILTERMODE_FN
-=======
->>>>>>> 403dc9d881124faceccfeaa2ae7afc9aa9fe0d62
+
 #ifdef SA_API
 //Standalone stuff
 #include <windows.h>
