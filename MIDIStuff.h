@@ -10,6 +10,9 @@
 #pragma clang diagnostic pop
 
 #include "IMidiQueue.h"
+#include "GSignal.h"
+using Gallant::Signal2;
+
 
 class MIDIReceiver {
 private:
@@ -24,16 +27,11 @@ private:
     inline double noteNumberToFrequency(int noteNumber) { return 440.0 * pow(2.0, (noteNumber - 69.0) / 12.0); }
 
 public:
-    MIDIReceiver() :
-    mNumKeys(0),
-    mLastNoteNumber(-1),
-    mLastFrequency(-1.0),
-    mLastVelocity(0),
-    mOffset(0) {
-        for (int i = 0; i < keyCount; i++) {
-            mKeyStatus[i] = false;
-        }
-    };
+    MIDIReceiver(); //constructor
+
+	///signals are gonna be used in context with the envelope generator to avoid dependencies
+	Signal2< int, int > noteOn;
+    Signal2< int, int > noteOff;
 
     // Returns true if the key with a given index is currently pressed
     inline bool getKeyStatus(int keyIndex) const { return mKeyStatus[keyIndex]; }

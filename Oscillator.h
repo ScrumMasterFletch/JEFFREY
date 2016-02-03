@@ -10,7 +10,8 @@ enum OscillatorMode {
     OSCILLATOR_MODE_SINE,
     OSCILLATOR_MODE_SAW,
     OSCILLATOR_MODE_SQUARE,
-    OSCILLATOR_MODE_TRIANGLE
+    OSCILLATOR_MODE_TRIANGLE,
+	kNumOscillatorModes
 };
 
 class Oscillator {

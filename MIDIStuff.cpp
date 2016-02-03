@@ -1,6 +1,21 @@
 #include "MIDIStuff.h"
 
 
+//constructor
+MIDIReceiver::MIDIReceiver(){
+    mNumKeys = 0;
+    mLastNoteNumber = -1;
+    mLastFrequency = -1.0;
+    mLastVelocity = 0;
+    mOffset = 0;
+
+    for (int i = 0; i < keyCount; i++) {
+         mKeyStatus[i] = false;
+	}
+
+}
+
+
 ///this function is called on the receival of every MIDI message
 //is called in ProcessMidiMsg, a IPlug class to handle MIDI that we overwrite in MyFirstPlugin
 void MIDIReceiver::onMessageReceived(IMidiMsg* midiMessage) {
@@ -54,6 +69,9 @@ void MIDIReceiver::advance() {
                 mLastNoteNumber = noteNumber;
                 mLastFrequency = noteNumberToFrequency(mLastNoteNumber);
                 mLastVelocity = velocity;
+
+				///Signaling the note is on
+                noteOn(noteNumber, velocity);
             }
         } 
 		else { //either it was a note-off msg or the velocity is 0 (both mean sound should stop)
@@ -67,8 +85,9 @@ void MIDIReceiver::advance() {
 			// this stops the note if it was the current note being released
             if (noteNumber == mLastNoteNumber) {
                 mLastNoteNumber = -1;
-                mLastFrequency = -1;
-                mLastVelocity = 0;
+
+				///signaling the note is off
+				noteOff(noteNumber, mLastVelocity);
             }
         }
         mMidiQueue.Remove(); //now actually removes the Peek()ed message
