@@ -1,10 +1,13 @@
 
-#pragma once
+//#pragma once
 #ifndef __ENVELOPESTUFF__
 #define __ENVELOPESTUFF__
 
 
 #include <cmath>
+#include "GSignal.h"
+using Gallant::Signal0;
+
 
 class EnvGen {
 public:
@@ -19,17 +22,20 @@ public:
 
     void enterStage(int newStage);
     double nextSample();
-    void setSampleRate(double newSampleRate);
+    static void setSampleRate(double newSampleRate);
     inline int getCurrentStage() const { return currStage; };
     double minLevel;
 	EnvGen();
 	void setStageValues(int stage, double value);
-    
+    Signal0<> beganEnvelopeCycle;
+    Signal0<> finishedEnvelopeCycle;
+	void reset();
+
 private:
     int currStage;
     double currLevel;
     double levelMult; //what level is multiplied by during current env-stage
-    double sampleRate;
+    static double sampleRate;
     double stageValues[NUM_STAGES];
     void calculateMultiplier(double startLvl, double endLvl, unsigned long long lengthInSamples);
     unsigned long long currIndex; //current index in current stage

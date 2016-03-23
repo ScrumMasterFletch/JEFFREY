@@ -5,6 +5,8 @@
 #include "Oscillator.h"
 #include "MIDIStuff.h"
 #include "EnvelopeStuff.h"
+#include "Filter.h"
+#include "VoiceManager.h"
 
 class MyFirstPlugin : public IPlug
 {
@@ -22,13 +24,34 @@ private:
   double mFrequency;
   double mThreshold;
   void CreatePresets();
-  Oscillator LilJeffrey;
   MIDIReceiver mMidiRec;
-  EnvGen mEnvGen;
 
+  VoiceManager LilJeffreyManager;
+
+  ///removed to be replaced Voices/Voice manager
+  //Oscillator LilJeffrey;
+  //EnvGen mEnvGen;
+  //Filter mFilter;
+  //Oscillator mLFO;
+  //double lfoFilterModAmount;
+  //EnvGen mFilterEnvGen;
+  //double filterEnvelopeAmount;
+
+  /*
   //used in context with MIDI and EnvGen
-  inline void onNoteOn(const int noteNumber, const int velocity) { mEnvGen.enterStage(STAGE_ATTACK); };
-  inline void onNoteOff(const int noteNumber, const int velocity) { mEnvGen.enterStage(STAGE_RELEASE); };
+  inline void onNoteOn(const int noteNumber, const int velocity) {
+    mEnvGen.enterStage(STAGE_ATTACK);
+    mFilterEnvGen.enterStage(STAGE_ATTACK);
+  };
+
+  inline void onNoteOff(const int noteNumber, const int velocity) {
+    mEnvGen.enterStage(STAGE_RELEASE);
+    mFilterEnvGen.enterStage(STAGE_RELEASE);
+  };
+  */
+  //used to signal EnvGen
+  //inline void onBeganEnvelopeCycle() { LilJeffrey.setMuted(false); }
+  //inline void onFinishedEnvelopeCycle() { LilJeffrey.setMuted(true); }
 
 };
 

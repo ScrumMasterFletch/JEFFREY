@@ -1,13 +1,20 @@
 #include "EnvelopeStuff.h"
 
+//now all envelope generators will have the same sample rate
+double EnvGen::sampleRate = 44100.0;
+
+#ifndef max
+#define max(a,b) (((a) > (b)) ? (a) : (b))
+#endif
 
 //constructor: just initializes all the needed values
 EnvGen::EnvGen(){
-    minLevel = 0.0001; //needed so level wont be 0
+    //minLevel = 0.0001; //needed so level wont be 0
+	minLevel = 0.001;
     currStage = STAGE_OFF,
     currLevel = minLevel;
     levelMult = 1.0;
-    sampleRate = 44100.0;
+    //sampleRate = 44100.0; //declared as static at top of file
     currIndex = 0;
     nextStageIndex = 0; 
 
@@ -73,13 +80,26 @@ double EnvGen::nextSample() {
     }
 
 	//returns the updated level
-    return currLevel;
+	if (currStage == STAGE_OFF) return minLevel;
+	else return currLevel;
 }
 
 
 
 ///CHANGES TO THE NEXT STATE, UPDATES CURRLEVEL AND LEVELMULT
 void EnvGen::enterStage(int newStage) {
+
+	if (currStage == newStage) return;
+    if (currStage == STAGE_OFF) 
+	{
+       beganEnvelopeCycle();
+    }
+    if (newStage == STAGE_OFF) 
+	{
+       finishedEnvelopeCycle();
+    }
+
+
 	//updates the current stage
     currStage = newStage;
 
@@ -152,11 +172,91 @@ void EnvGen::setSampleRate(double newSampleRate) {
 }
 
 
-void EnvGen::setStageValues(int stage, double value){
 
-	if((stage > 0) && (stage < 5))
+///this setter is used in OnParamChange in the main program to set these values from the knobs
+void EnvGen::setStageValues(int stage, double value) {
+
+	//here is where the stageValues array is actually updated, the rest of the 
+	//code below is updating the multipliers and nextStageIndex so the new
+	//value will affect the current envelope, not just the next one generated
+    stageValues[stage] = value;
+
+	//"if we're in the current stage thats getting changed"
+    if (stage == currStage) {
+
+        if((currStage == STAGE_ATTACK) || (currStage == STAGE_DECAY) || (currStage == STAGE_RELEASE)) {
+            double nextLevelValue;
+			//switch statement handling each state case
+            switch (currStage) 
+			{
+                case STAGE_ATTACK:
+                    nextLevelValue = 1.0;
+                    break;
+
+                case STAGE_DECAY:
+					double max;
+					if(stageValues[STAGE_SUSTAIN] > minLevel)
+			        {
+				       max = stageValues[STAGE_SUSTAIN];
+			        }
+			        else max = minLevel;
+                    break;
+
+                case STAGE_RELEASE:
+                    nextLevelValue = minLevel;
+                    break;
+
+                default:
+                    break;
+            }
+
+            //calculating where the generator is in the current stage:
+            double currStageProgress = (currIndex + 0.0) / nextStageIndex;
+
+            //calculating whats left of the current stage
+            double restOfStage = 1.0 - currStageProgress;
+
+			//calculating the number of samples left in the stage now that the param has changed
+            unsigned long long samplesLeftInStage = restOfStage * value * sampleRate;
+
+			//updating nextStageIndex with the new samplesLeft value
+            nextStageIndex = currIndex + samplesLeftInStage;
+
+			///finally recalculating the multiplier based on the new samplesLeft  and nextLevel values
+            calculateMultiplier(currLevel, nextLevelValue, samplesLeftInStage);
+        } 
+		else //aka current state is either Stage_off or Stage_sustain
+		{
+			if(currStage == STAGE_SUSTAIN) {
+            currLevel = value;
+		}
+
+
+        }
+    }
+
+	///checks the case that we're in decay, and sustain gets changed, so the end value needs to be updated
+	if ((currStage == STAGE_DECAY) && (stage == STAGE_SUSTAIN)) {
+
+    unsigned long long samplesLeft = nextStageIndex - currIndex;
+
+	double max;
+	if(stageValues[STAGE_SUSTAIN] > minLevel)
 	{
-		stageValues[stage] = value;
+	   max = stageValues[STAGE_SUSTAIN];
 	}
+	else max = minLevel;
 
+	//updating the multiplier so we decay correctly to the new value
+    calculateMultiplier(currLevel, max, samplesLeft);
+    }
+
+}
+
+void EnvGen::reset() {
+    currStage = STAGE_OFF;
+    currLevel = minLevel;
+    levelMult = 1.0;
+    currIndex = 0;
+    nextStageIndex = 0;
 }

@@ -4,9 +4,6 @@
 //constructor
 MIDIReceiver::MIDIReceiver(){
     mNumKeys = 0;
-    mLastNoteNumber = -1;
-    mLastFrequency = -1.0;
-    mLastVelocity = 0;
     mOffset = 0;
 
     for (int i = 0; i < keyCount; i++) {
@@ -56,40 +53,26 @@ void MIDIReceiver::advance() {
 
         /// There are only note on/off messages in the queue, see ::OnMessageReceived
 		//if message was note on and velocity >0, update the keyStatus array for that note to true
-        if (status == IMidiMsg::kNoteOn && velocity) {
-            if(mKeyStatus[noteNumber] == false) {
+        if (status == IMidiMsg::kNoteOn && velocity) 
+		{
+            if(mKeyStatus[noteNumber] == false) 
+			{
                 mKeyStatus[noteNumber] = true;
                 mNumKeys += 1;
+				noteOn(noteNumber, velocity);
             }
 
-            // A key pressed later overrides any previously pressed key:
-			// note-on message received, not same note, so Last.. members are updated
-			// the "Last" members are the the values sent to the oscillator aka whats currently playing
-            if (noteNumber != mLastNoteNumber) {
-                mLastNoteNumber = noteNumber;
-                mLastFrequency = noteNumberToFrequency(mLastNoteNumber);
-                mLastVelocity = velocity;
-
-				///Signaling the note is on
-                noteOn(noteNumber, velocity);
-            }
         } 
-		else { //either it was a note-off msg or the velocity is 0 (both mean sound should stop)
-			//takes away note no loger playing
+		else //either it was a note-off msg or the velocity is 0 (both mean sound should stop)
+		{ 
+			//takes away note no longer playing
             if(mKeyStatus[noteNumber] == true) {
                 mKeyStatus[noteNumber] = false;
                 mNumKeys -= 1;
+				noteOff(noteNumber, velocity);
             }
+        }//else
 
-            // If the last note was released, nothing should play:
-			// this stops the note if it was the current note being released
-            if (noteNumber == mLastNoteNumber) {
-                mLastNoteNumber = -1;
-
-				///signaling the note is off
-				noteOff(noteNumber, mLastVelocity);
-            }
-        }
         mMidiQueue.Remove(); //now actually removes the Peek()ed message
     }
     mOffset++; //adjusts the offset

@@ -11,6 +11,7 @@ enum OscillatorMode {
     OSCILLATOR_MODE_SAW,
     OSCILLATOR_MODE_SQUARE,
     OSCILLATOR_MODE_TRIANGLE,
+	OSCILLATOR_MODE_NOISE,
 	kNumOscillatorModes
 };
 
@@ -20,12 +21,13 @@ private:
     double mPI;
     double mFrequency;
     double mPhase;
-    double mSampleRate;
+    static double mSampleRate;
     double mPhaseIncrement;
     void updateIncrement();
 	double twoPI;
     bool isMuted;
 public:
+	void reset() { mPhase = 0.0; }
     void setMode(OscillatorMode mode);
     void setFrequency(double frequency);
     void setSampleRate(double sampleRate);
