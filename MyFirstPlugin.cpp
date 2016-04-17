@@ -171,81 +171,82 @@ MyFirstPlugin::MyFirstPlugin(IPlugInstanceInfo instanceInfo):IPLUG_CTOR(kNumPara
 
 	///overall gui initialization
     IGraphics* pGraphics = MakeGraphics(this, kWidth, kHeight);
-    pGraphics->AttachPanelBackground(&COLOR_TRANSPARENT);
+    //pGraphics->AttachPanelBackground(&COLOR_TRANSPARENT);
+	pGraphics->AttachBackground(BACKGROUND_ID, BACKGROUND_FN);
 
 	// Waveform switches 1 AND 2
     IBitmap waveformBitmap = pGraphics->LoadIBitmap(WAVEFORM_ID, WAVEFORM_FN, 4);
-    pGraphics->AttachControl(new ISwitchControl(this, 50, 350, kWaveform1, &waveformBitmap));
-	pGraphics->AttachControl(new ISwitchControl(this, 200, 350, kWaveform2, &waveformBitmap));
+    pGraphics->AttachControl(new ISwitchControl(this, 82, 99, kWaveform1, &waveformBitmap));
+	pGraphics->AttachControl(new ISwitchControl(this, 188, 99, kWaveform2, &waveformBitmap));
 
 	// Filtermode Switch
 	IBitmap filtermodeBitmap = pGraphics->LoadIBitmap(FILTERMODE_ID, FILTERMODE_FN, 3);
-	pGraphics->AttachControl(new ISwitchControl(this, 50, 275, kFilterMode, &filtermodeBitmap));
+	pGraphics->AttachControl(new ISwitchControl(this, 370, 99, kFilterMode, &filtermodeBitmap));
 
 	
 	/// BITMAP FOR ALL CURRENT KNOBS
 	IBitmap smallKnobBitmap = pGraphics->LoadIBitmap(KNOB_SMALL_ID, KNOB_SMALL_FN, 31);
 
 	/// DISTORTION KNOBb
-	pGraphics->AttachControl(new IKnobMultiControl(this, 500, 300, kThreshold, &smallKnobBitmap));
+	pGraphics->AttachControl(new IKnobMultiControl(this, 401, 361, kThreshold, &smallKnobBitmap));
 
 	///ENVELOPE KNOBS
 	//ATTACK KNOB
-    pGraphics->AttachControl(new IKnobMultiControl(this, 50, 50, kAttack, &smallKnobBitmap));
+    pGraphics->AttachControl(new IKnobMultiControl(this, 32, 172, kAttack, &smallKnobBitmap));
 	//DECAY KNOB
-    pGraphics->AttachControl(new IKnobMultiControl(this, 250, 50, kDecay, &smallKnobBitmap));
+    pGraphics->AttachControl(new IKnobMultiControl(this, 94, 172, kDecay, &smallKnobBitmap));
 	//SUSTAIN KNOB
-    pGraphics->AttachControl(new IKnobMultiControl(this, 450, 50, kSustain, &smallKnobBitmap));
+    pGraphics->AttachControl(new IKnobMultiControl(this, 156, 172, kSustain, &smallKnobBitmap));
 	//RELEASE KNOB
-    pGraphics->AttachControl(new IKnobMultiControl(this, 650, 50, kRelease, &smallKnobBitmap));
+    pGraphics->AttachControl(new IKnobMultiControl(this, 218, 172, kRelease, &smallKnobBitmap));
 
 
 	///FILTER AND FILTER ENVELOPE KNOBS
 	//CUTOFF KNOB
-	pGraphics->AttachControl(new IKnobMultiControl(this, 100, 275, kFilterCutoff, &smallKnobBitmap));
+	pGraphics->AttachControl(new IKnobMultiControl(this, 413, 91, kFilterCutoff, &smallKnobBitmap));
 	//RESONANCE KNOB
-	pGraphics->AttachControl(new IKnobMultiControl(this, 165, 275, kFilterResonance, &smallKnobBitmap));
+	pGraphics->AttachControl(new IKnobMultiControl(this, 466, 91, kFilterResonance, &smallKnobBitmap));
 	//FILTER ATTACK KNOB
-	pGraphics->AttachControl(new IKnobMultiControl(this, 100, 215, kFilterAttack, &smallKnobBitmap));
+	pGraphics->AttachControl(new IKnobMultiControl(this, 320, 172, kFilterAttack, &smallKnobBitmap));
 	//FILTER DECAY KNOB
-	pGraphics->AttachControl(new IKnobMultiControl(this, 165, 215, kFilterDecay, &smallKnobBitmap));
+	pGraphics->AttachControl(new IKnobMultiControl(this, 382, 172, kFilterDecay, &smallKnobBitmap));
 	// FILTER SUSTAIN KNOB
-	pGraphics->AttachControl(new IKnobMultiControl(this, 230, 215, kFilterSustain, &smallKnobBitmap));
+	pGraphics->AttachControl(new IKnobMultiControl(this, 444, 172, kFilterSustain, &smallKnobBitmap));
 	// FILTER RELEASE KNOB	
-	pGraphics->AttachControl(new IKnobMultiControl(this, 295, 215, kFilterRelease, &smallKnobBitmap));
+	pGraphics->AttachControl(new IKnobMultiControl(this, 506, 172, kFilterRelease, &smallKnobBitmap));
 	// FILTER AMOUNT KNOB	
-	pGraphics->AttachControl(new IKnobMultiControl(this, 360, 215, kFilterEnvelopeAmount, &smallKnobBitmap));
+	pGraphics->AttachControl(new IKnobMultiControl(this, 506, 253, kFilterEnvelopeAmount, &smallKnobBitmap));
 
 	///LFO KNOBS
 	// LFO FREQ KNOB	
-	pGraphics->AttachControl(new IKnobMultiControl(this, 550, 350, kLFOFrequency, &smallKnobBitmap));
+	pGraphics->AttachControl(new IKnobMultiControl(this, 373, 253, kLFOFrequency, &smallKnobBitmap));
 	// LFO MOD AMOUNT KNOB	
-	pGraphics->AttachControl(new IKnobMultiControl(this, 600, 350, kLFOModAmount, &smallKnobBitmap));
+	pGraphics->AttachControl(new IKnobMultiControl(this, 426, 253, kLFOModAmount, &smallKnobBitmap));
 	// LFO waveform select
-	pGraphics->AttachControl(new ISwitchControl(this, 499, 350, kLFOWaveform, &waveformBitmap));
+	pGraphics->AttachControl(new ISwitchControl(this, 330, 261, kLFOWaveform, &waveformBitmap));
 
 	///OSCILLATOR MIX KNOB
-	pGraphics->AttachControl(new IKnobMultiControl(this, 125, 340, kMix, &smallKnobBitmap));
+	pGraphics->AttachControl(new IKnobMultiControl(this, 125, 91, kMix, &smallKnobBitmap));
 
 	///Noise Amount KNOB
-	pGraphics->AttachControl(new IKnobMultiControl(this, 250, 340, kNoiseAmount, &smallKnobBitmap));
+	pGraphics->AttachControl(new IKnobMultiControl(this, 60, 253, kNoiseAmount, &smallKnobBitmap));
 	//CUTOFF KNOB
-	pGraphics->AttachControl(new IKnobMultiControl(this, 300, 340, kNoiseFilterCutoff, &smallKnobBitmap));
+	pGraphics->AttachControl(new IKnobMultiControl(this, 113, 253, kNoiseFilterCutoff, &smallKnobBitmap));
 
 	///DELAY KNOBS
 	//amount knob
-	pGraphics->AttachControl(new IKnobMultiControl(this, 600, 215, kDelayAmt, &smallKnobBitmap));
+	pGraphics->AttachControl(new IKnobMultiControl(this, 269, 359, kDelayAmt, &smallKnobBitmap));
 	//time knob
-	pGraphics->AttachControl(new IKnobMultiControl(this, 650, 215, kDelayTime, &smallKnobBitmap));
+	pGraphics->AttachControl(new IKnobMultiControl(this, 322, 359, kDelayTime, &smallKnobBitmap));
 
 	///PitchMod KNOBS
 	//amount knob
-	pGraphics->AttachControl(new IKnobMultiControl(this, 600, 150, kOsc1PitchMod, &smallKnobBitmap));
+	pGraphics->AttachControl(new IKnobMultiControl(this, 138, 359, kOsc1PitchMod, &smallKnobBitmap));
 	//time knob
-	pGraphics->AttachControl(new IKnobMultiControl(this, 650, 150, kOsc2PitchMod, &smallKnobBitmap));
+	pGraphics->AttachControl(new IKnobMultiControl(this, 191, 359, kOsc2PitchMod, &smallKnobBitmap));
 
 	///GLIDE KNOB
-	pGraphics->AttachControl(new IKnobMultiControl(this, 450, 215, kGlideTime, &smallKnobBitmap));
+	pGraphics->AttachControl(new IKnobMultiControl(this, 192, 253, kGlideTime, &smallKnobBitmap));
 
 	///finalizing GUI
     AttachGraphics(pGraphics);
